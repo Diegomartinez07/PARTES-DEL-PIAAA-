@@ -1,0 +1,90 @@
+import requests
+
+# Obtener el número total de personajes al inicio
+def obtener_total_personajes():
+    try:
+        url = 'https://rickandmortyapi.com/api/character'
+        respuesta = requests.get(url)
+        if respuesta.status_code == 200:
+            return respuesta.json()['info']['count']
+        else:
+            print("Error al obtener el número total de personajes.")
+            return 0
+    except requests.exceptions.RequestException as e:
+        print("Error en la conexión con la API:", e)
+        return 0
+
+# Función para validar la entrada del ID sin usar re
+def validar_id_entrada(texto, max_id):
+    if not texto.isdigit() or texto.startswith('0'):
+        print("Error: La entrada debe ser un número entero positivo, sin ceros a la izquierda.")
+        return False
+    id_num = int(texto)
+    if id_num > max_id:
+        print(f"Error: El ID debe estar entre 1 y {max_id}.")
+        return False
+    return True
+
+# Función para obtener información de un personaje por ID
+def obtener_personaje_por_id(id_personaje):
+    url = f'https://rickandmortyapi.com/api/character/{id_personaje}'
+    try:
+        respuesta = requests.get(url)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            print("\nInformación del personaje:")
+            print(f"Nombre: {datos['name']}")
+            print(f"Especie: {datos['species']}")
+            print(f"Estado: {datos['status']}")
+            print(f"Género: {datos['gender']}")
+            print(f"Origen: {datos['origin']['name']}")
+            print(f"Ubicación actual: {datos['location']['name']}")
+            return True
+        elif respuesta.status_code == 404:
+            print("No se encontró el personaje. Verifica el ID.")
+            return False
+        else:
+            print(f"Error HTTP: Código {respuesta.status_code}")
+            return False
+    except requests.exceptions.Timeout:
+        print("La solicitud tardó demasiado. Intenta de nuevo.")
+        return False
+    except requests.exceptions.ConnectionError:
+        print("Error de conexión. Verifica tu red.")
+        return False
+    except requests.exceptions.RequestException as e:
+        print("Error en la conexión con la API:", e)
+        return False
+
+# Función para mostrar los primeros N personajes disponibles
+def mostrar_personajes_iniciales(n=5):
+    if n < 1 or n > 20:
+        print("El número de personajes a mostrar debe estar entre 1 y 20.")
+        return
+    print("\nMostrando los primeros personajes:")
+    url = 'https://rickandmortyapi.com/api/character'
+    try:
+        respuesta = requests.get(url)
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            for personaje in datos['results'][:n]:
+                print(f"{personaje['id']}. {personaje['name']} - {personaje['species']} ({personaje['status']})")
+        else:
+            print("Error al obtener la lista de personajes.")
+    except requests.exceptions.RequestException as e:
+        print("Error en la conexión con la API:", e)
+
+# Script principal
+if _name_ == "_main_":
+    print("Bienvenido al sistema de consulta de personajes de Rick and Morty")
+    mostrar_personajes_iniciales()
+
+    max_id = obtener_total_personajes()
+    if max_id == 0:
+        print("No se puede continuar sin conocer el número total de personajes.")
+    else:
+        while True:
+            id_ingresado = input("\nIngresa el ID de un personaje para ver sus detalles: ")
+            if validar_id_entrada(id_ingresado, max_id):
+                if obtener_personaje_por_id(id_ingresado):
+                    break  # Solo salimos si el ID existe y se mostró el personaje
