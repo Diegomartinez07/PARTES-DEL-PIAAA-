@@ -1,0 +1,78 @@
+import requests
+import re
+import json
+
+# Funciones de validación con expresiones regulares
+def nombre_valido(nombre):
+    return bool(re.fullmatch(r"[A-Za-z\s\-']+", nombre))
+
+def estado_valido(estado):
+    return estado in ["Alive", "Dead", "unknown"]
+
+def genero_valido(genero):
+    return genero in ["Male", "Female", "Genderless", "unknown"]
+
+# Consultar personajes desde la API
+url = "https://rickandmortyapi.com/api/character"
+personajes_validos = []
+
+while url:
+    response = requests.get(url)
+    data = response.json()
+    for personaje in data["results"]:
+        nombre = personaje["name"]
+        estado = personaje["status"]
+        genero = personaje["gender"]
+
+        # Validaciones antes de guardar
+        if nombre_valido(nombre) and estado_valido(estado) and genero_valido(genero):
+            personajes_validos.append({
+                "nombre": nombre,
+                "estado": estado,
+                "género": genero,
+                "especie": personaje["species"],
+                "ubicación": personaje["location"]["name"]
+            })
+    url = data["info"]["next"]
+
+# Guardar los datos válidos en formato JSON
+with open("personajes_validados.json", "w", encoding="utf-8") as f:
+    json.dump(personajes_validos, f, indent=4, ensure_ascii=False)
+
+print("Consulta completada. Datos válidos guardados en 'personajes_validados.json'.")
+import json
+import pandas as pd
+
+# Cargar los datos JSON previamente validados
+with open("personajes_validados.json", "r", encoding="utf-8") as f:
+    datos = json.load(f)
+
+# Convertir a DataFrame para análisis más cómodo
+df = pd.DataFrame(datos)
+
+# Mostrar primeras filas para revisión
+print("Vista previa de los datos:")
+print(df.head())
+
+# ---------------------------------------------------
+# LIMPIEZA DE DATOS
+# ---------------------------------------------------
+df.drop_duplicates(inplace=True)
+print("\nValores nulos por columna:")
+print(df.isnull().sum())
+
+# Como los datos son cadenas limpias, ya validadas, no se detectaron errores de formato.
+
+# Eliminación de errores (por ejemplo: espacios extra o mayúsculas desiguales)
+df["estado"] = df["estado"].str.strip().str.capitalize()
+df["género"] = df["género"].str.strip().str.capitalize()
+df["especie"] = df["especie"].str.strip().str.capitalize()
+df["ubicación"] = df["ubicación"].str.strip()
+
+# Revisión final de valores únicos por columna para asegurar limpieza
+print("\nValores únicos por columna (revisión final):")
+for columna in df.columns:
+    print(f"{columna}: {df[columna].unique()}")
+
+# Guardar el DataFrame limpio
+df.to_csv("personajes_limpios.csv", index=False, encoding="utf-8")
