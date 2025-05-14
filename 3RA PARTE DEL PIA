@@ -1,0 +1,98 @@
+#LECTURA DE DATOS DEL SEGUNDO SCRIPT
+# Leer el archivo .txt y reconstruir la lista de diccionarios
+estructura_desde_txt = []
+with open("personajes_procesados.txt", "r", encoding="utf-8") as archivo:
+    for linea in archivo:
+        partes = linea.strip().split(" | ")
+        if len(partes) == 5:
+            nombre, especie, estado, genero, ubicacion = partes
+            personaje = {
+                "nombre": nombre,
+                "especie": especie,
+                "estado": estado,
+                "género": genero,
+                "ubicación": ubicacion
+            }
+            estructura_desde_txt.append(personaje)
+# Verificamos que se haya cargado correctamente
+print("Datos cargados desde .txt:")
+for p in estructura_desde_txt[:3]:  # Mostrar solo los primeros 3 para ejemplo
+    print(p)
+#Validación en el Primer Script
+
+import request
+def nombre_valido(nombre):
+    return bool(re.fullmatch(r"[A-Za-z\s\-']+", nombre))
+def estado_valido(estado):
+    return estado in ["Alive", "Dead", "unknown"]
+def genero_valido(genero):
+    return genero in ["Male", "Female", "Genderless", "unknown"]
+
+#Validación al Segundo Script 
+import request
+# Funciones de validación
+def nombre_valido(nombre):
+    return bool(re.fullmatch(r"[A-Za-z\s\-']+", nombre))
+def estado_valido(estado):
+    return estado in ["Alive", "Dead", "Unknown"]
+def genero_valido(genero):
+    return genero in ["Male", "Female", "Genderless", "Unknown"]
+estructura_desde_txt = []
+with open("personajes_procesados.txt", "r", encoding="utf-8") as archivo:
+    for linea in archivo:
+        partes = linea.strip().split(" | ")
+        if len(partes) == 5:
+            nombre, especie, estado, genero, ubicacion = partea
+            # Validaciones antes de guardar
+            if nombre_valido(nombre) and estado_valido(estado) and genero_valido(genero):
+                personaje = {
+                    "nombre": nombre,
+                    "especie": especie,
+                    "estado": estado,
+                    "género": genero,
+                    "ubicación": ubicacion
+                }
+                estructura_desde_txt.append(personaje)
+print("Datos validados y cargados correctamente desde el archivo .txt")
+#PREPARACION PARA VISUALIZACION
+import json
+import pandas as pd
+# Cargar datos desde el JSON ya optimizado
+with open("estructura_optimizada.json", "r", encoding="utf-8") as f:
+    datos = json.load(f)
+# Crear un DataFrame para facilitar la visualización
+df = pd.DataFrame(datos)
+# Mostrar las primeras filas para confirmar estructura
+print(df.head())
+# Guardar en nuevo archivo CSV para uso en gráficas
+df.to_csv("datos_para_graficas.csv", index=False, encoding="utf-8")
+print("Datos preparados y guardados en 'datos_para_graficas.csv'")
+#CALCULAR ESTADISTICAS
+def calculate_statistics(data_list):
+    counter = Counter(data_list)
+    mode = counter.most_common(1)[0][0]
+    frequencies = list(counter.values())
+    mean = statistics.mean(frequencies)
+    median = statistics.median(frequencies)
+    std_dev = statistics.stdev(frequencies) if len(frequencies) > 1 else 0
+    return mean, median, mode, std_dev
+
+# Analizar y mostrar estadísticas
+def analyze_data(genders, species, statuses):
+    print("--- GENDER ANALYSIS ---")
+    gender_mean, gender_median, gender_mode, gender_std = calculate_statistics(genders)
+    print(f"Mean: {gender_mean}, Median: {gender_median}, Mode: {gender_mode}, Std Dev: {gender_std}")
+
+    print("--- SPECIES ANALYSIS ---")
+    species_mean, species_median, species_mode, species_std = calculate_statistics(species)
+    print(f"Mean: {species_mean}, Median: {species_median}, Mode: {species_mode}, Std Dev: {species_std}")
+
+    print("--- STATUS ANALYSIS ---")
+    status_mean, status_median, status_mode, status_std = calculate_statistics(statuses)
+    print(f"Mean: {status_mean}, Median: {status_median}, Mode: {status_mode}, Std Dev: {status_std}")
+
+    # Insights
+    print("\nINSIGHTS:")
+    print(f"Predominant Gender: {gender_mode}")
+    print(f"Most Common Species: {species_mode}")
+    print(f"Most Common Status: {status_mode}")
