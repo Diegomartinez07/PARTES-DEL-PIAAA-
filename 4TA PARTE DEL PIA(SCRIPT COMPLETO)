@@ -1,0 +1,126 @@
+import requests
+import re
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from collections import Counter
+import statistics
+
+# --- Funciones de Validación ---
+def nombre_valido(nombre):
+    return bool(re.fullmatch(r"[A-Za-z\s\-']+", nombre))
+
+def estado_valido(estado):
+    return estado in ["Alive", "Dead", "unknown"]
+
+def genero_valido(genero):
+    return genero in ["Male", "Female", "Genderless", "unknown"]
+
+# --- Obtener personajes validos desde API ---
+def obtener_personajes_validos():
+    url = "https://rickandmortyapi.com/api/character"
+    personajes_validos = []
+    while url:
+        response = requests.get(url)
+        data = response.json()
+        for personaje in data["results"]:
+            nombre = personaje["name"]
+            estado = personaje["status"]
+            genero = personaje["gender"]
+            if nombre_valido(nombre) and estado_valido(estado) and genero_valido(genero):
+                personajes_validos.append({
+                    "nombre": nombre,
+                    "estado": estado,
+                    "género": genero,
+                    "especie": personaje["species"],
+                    "ubicación": personaje["location"]["name"]
+                })
+        url = data["info"]["next"]
+    return personajes_validos
+
+# --- Guardar en Excel ---
+def guardar_en_excel(df, nombre_archivo="personajes_analizados.xlsx"):
+    with pd.ExcelWriter(nombre_archivo, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Datos', index=False)
+        estados_counts = df["estado"].value_counts()
+        estados_counts.to_excel(writer, sheet_name='Resumen Estados')
+        generos_counts = df["género"].value_counts()
+        generos_counts.to_excel(writer, sheet_name='Resumen Géneros')
+        especies_counts = df["especie"].value_counts()
+        especies_counts.to_excel(writer, sheet_name='Resumen Especies')
+    print(f"Datos guardados en el archivo Excel '{nombre_archivo}' con hojas estructuradas.")
+
+# --- Función para graficar ---
+def graficos(df):
+    plt.style.use('ggplot')  # Estilo seguro que no falla
+    # Conteos para gráficas
+    estados_counts = df["estado"].value_counts()
+    generos_counts = df["género"].value_counts()
+    especies_counts = df["especie"].value_counts()
+
+    # Gráfico de barras: Estados
+    plt.figure(figsize=(8,5))
+    estados_counts.plot(kind='bar', color='skyblue')
+    plt.title('Cantidad de Personajes por Estado')
+    plt.xlabel('Estado')
+    plt.ylabel('Cantidad')
+    plt.grid(axis='y')
+    plt.tight_layout()
+    plt.show()
+
+    # Gráfico de pastel: Géneros
+    plt.figure(figsize=(6,6))
+    generos_counts.plot(kind='pie', autopct='%1.1f%%', startangle=140, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99'])
+    plt.title('Distribución de Géneros')
+    plt.ylabel('')
+    plt.tight_layout()
+    plt.show()
+
+    # Diagrama de dispersión: Especies vs Cantidad (no es típico scatter, pero lo adaptamos)
+    plt.figure(figsize=(8,5))
+    x = range(len(especies_counts))
+    y = especies_counts.values
+    plt.scatter(x, y, color='purple')
+    plt.title('Dispersión de Cantidad por Especies')
+    plt.xlabel('Especies (Index)')
+    plt.ylabel('Cantidad')
+    plt.xticks(ticks=x, labels=especies_counts.index, rotation=45, ha='right')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Gráfico de líneas: Conteo acumulado de personajes (ordenado alfabéticamente por nombre)
+    df_sorted = df.sort_values('nombre')
+    conteo_acumulado = range(1, len(df_sorted) + 1)
+    plt.figure(figsize=(8,5))
+    plt.plot(df_sorted["nombre"], conteo_acumulado, marker='o', linestyle='-', color='green')
+    plt.title('Conteo acumulado de personajes ordenados por nombre')
+    plt.xlabel('Nombre del Personaje')
+    plt.ylabel('Conteo Acumulado')
+    plt.xticks(rotation=90)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+# --- Función principal ---
+def main():
+    print("Obteniendo personajes válidos de la API...")
+    personajes = obtener_personajes_validos()
+
+    # Crear DataFrame
+    df = pd.DataFrame(personajes)
+
+    # Limpiar y normalizar texto
+    df["estado"] = df["estado"].str.strip().str.capitalize()
+    df["género"] = df["género"].str.strip().str.capitalize()
+    df["especie"] = df["especie"].str.strip().str.capitalize()
+    df["ubicación"] = df["ubicación"].str.strip()
+
+    # Guardar en Excel
+    guardar_en_excel(df)
+
+    # Mostrar gráficas
+    graficos(df)
+
+if __name__ == "__main__":
+    main()
